@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "hardhat run scripts/download-snark-artifacts.ts && hardhat test",
-    "download:snark-artifacts": "hardhat run scripts/download-snark-artifacts.ts"
+    "test": "hardhat run scripts/download-snark-artifacts.js && hardhat test",
+    "download:snark-artifacts": "hardhat run scripts/download-snark-artifacts.js"
   },
   "author": "",
   "license": "ISC",

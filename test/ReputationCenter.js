@@ -8,6 +8,8 @@ const { run } = require("hardhat");
 const {Group} = require("@semaphore-protocol/group");
 const {Identity} = require("@semaphore-protocol/identity");
 const {generateProof} = require("@semaphore-protocol/proof");
+const packageJson = require("../package.json");
+const config = packageJson.config;
 
 // import { Group } from "@semaphore-protocol/group"
 // import { Identity } from "@semaphore-protocol/identity"
@@ -39,6 +41,9 @@ describe("ReputationCenter", function () {
     let mockERC20;
     let reputationCenter;
     let erc20WealthHook;
+    const wasmFilePath = `${config.paths.build["snark-artifacts"]}/semaphore.wasm`
+    const zkeyFilePath = `${config.paths.build["snark-artifacts"]}/semaphore.zkey`
+
 
     const groupId = "1";
     const group = new Group(groupId);
@@ -78,6 +83,17 @@ describe("ReputationCenter", function () {
       console.log(
         (await reputationCenter.balanceOf(owner.address, groupId)).toString()
       );
+      group.addMember(users[0].commitment);
+
+      const fullProof = await generateProof(users[0], group, groupId, groupId, {
+          wasmFilePath,
+          zkeyFilePath
+      });
+
+      await reputationCenter.connect(addr2).exportReputation(groupId, fullProof.merkleTreeRoot, fullProof.nullifierHash, fullProof.proof);
+      console.log(
+        (await reputationCenter.balanceOf(addr2.address, groupId)).toString()
+      );
     });
 
     it("Without enough tokens cannot join group", async function () {
@@ -85,70 +101,4 @@ describe("ReputationCenter", function () {
     });
 
   });
-
-//   describe("Withdrawals", function () {
-//     describe("Validations", function () {
-//       it("Should revert with the right error if called too soon", async function () {
-//         const { lock } = await loadFixture(deployOneYearLockFixture);
-
-//         await expect(lock.withdraw()).to.be.revertedWith(
-//           "You can't withdraw yet"
-//         );
-//       });
-
-//       it("Should revert with the right error if called from another account", async function () {
-//         const { lock, unlockTime, otherAccount } = await loadFixture(
-//           deployOneYearLockFixture
-//         );
-
-//         // We can increase the time in Hardhat Network
-//         await time.increaseTo(unlockTime);
-
-//         // We use lock.connect() to send a transaction from another account
-//         await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-//           "You aren't the owner"
-//         );
-//       });
-
-//       it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
-//         const { lock, unlockTime } = await loadFixture(
-//           deployOneYearLockFixture
-//         );
-
-//         // Transactions are sent using the first signer by default
-//         await time.increaseTo(unlockTime);
-
-//         await expect(lock.withdraw()).not.to.be.reverted;
-//       });
-//     });
-
-//     describe("Events", function () {
-//       it("Should emit an event on withdrawals", async function () {
-//         const { lock, unlockTime, lockedAmount } = await loadFixture(
-//           deployOneYearLockFixture
-//         );
-
-//         await time.increaseTo(unlockTime);
-
-//         await expect(lock.withdraw())
-//           .to.emit(lock, "Withdrawal")
-//           .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
-//       });
-//     });
-
-//     describe("Transfers", function () {
-//       it("Should transfer the funds to the owner", async function () {
-//         const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
-//           deployOneYearLockFixture
-//         );
-
-//         await time.increaseTo(unlockTime);
-
-//         await expect(lock.withdraw()).to.changeEtherBalances(
-//           [owner, lock],
-//           [lockedAmount, -lockedAmount]
-//         );
-//       });
-//     });
-//   });
 });
